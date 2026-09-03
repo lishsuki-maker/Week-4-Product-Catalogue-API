@@ -1,0 +1,57 @@
+name: Consumer Workflow
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  dockerfile-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.3.0
+        with:
+          dockerfile: Dockerfile
+
+  trivy-scan1:
+    name: Config + Fs_CRITICAL, HIGH
+    uses: lishsuki-maker/Week-4-shared-repo/.github/workflows/security-scan.yml@main
+    with:
+      severity: "CRITICAL,HIGH"
+
+  trivy-scan2:
+    name: Config + Fs_CRITICAL only
+    uses: lishsuki-maker/Week-4-shared-repo/.github/workflows/security-scan.yml@main
+    with:
+      severity: "CRITICAL"
+
+  python-sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install bandit==1.7.9
+      - name: Run bandit
+        run: bandit -r . -ll
+
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make build
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.3.1
+      - name: Generate an SBOM
+        run: trivy image --format spdx-json --output sbom.json product-catalogue:2.0.0
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
