@@ -162,6 +162,5 @@ def get_inventory(item_id):
             "status": "error",
             "message": str(e)
         }), 500
-log("A request to /inventory/42 has been received")
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)  # nosec B104 - This is required in order to listen on all network interfa
+    app.run(host="0.0.0.0", port=5000)  # nosec B104 - This is required in order to listen on all network interfaces
